@@ -3,17 +3,20 @@ inputFile = open('inputPS2.txt', 'r')
 promptFile = open('promptsPS2.txt','r')
 outputFile = open('outputPS2.txt', 'w')
 
-#Node structure in terms of class of Truck Node
+
+
+
+
+#Node structure in class Truck Node
 class TruckNode:
     numOfVariable = 0
     max_limit = 0
     availTruckList = list()
     maxDeliveries = list()
-    orderStatus = list()
     UID = list()
     count = list()
-    
-	#Constructor with UID of Truck 
+    highFreqlsit = list()
+
     def __init__(self, Uid):
         self.left = None
         self.right = None
@@ -22,7 +25,10 @@ class TruckNode:
 
 
 
-#This function reads the input file where the data of truck's UID entering & exiting the warhouse is present. It reads the data then accordingly the Binary tree is created. It checks for the UID of the truck and increment the Check_Out_Count variable "chkoutCtr" as per the data received from the input file.
+#This function reads the input file where the data of truck's UID entering & exiting the warhouse is present. 
+#It reads the data then accordingly the Binary tree is created. 
+#It checks for the UID of the truck and increment the Check_Out_Count 
+#variable "chkoutCtr" as per the data received from the input file.
 def _readTruckRec(tNode, Uid):
     if tNode is None:
         TruckNode.numOfVariable += 1
@@ -31,10 +37,13 @@ def _readTruckRec(tNode, Uid):
         return TruckNode(Uid)
     else:
         if tNode.UId == Uid:
+          if tNode.chkoutCtr+1 <= TruckNode.max_limit*2:
             tNode.chkoutCtr += 1
             index = TruckNode.UID.index(Uid)
             TruckNode.count[index] = tNode.chkoutCtr
             return tNode
+          else:
+            print("Vehicle id "+ str(Uid) +" no longer available for service")
         elif tNode.UId < Uid:
             tNode.right = _readTruckRec(tNode.right, Uid)
         else:
@@ -44,7 +53,8 @@ def _readTruckRec(tNode, Uid):
 
 
 
-#This function reads the Binary tree and reads its TruckNode. The value of Truck's UID and its chkoutCtr variable is read and then written to the output file. 
+#This function reads the Binary tree and reads its TruckNode. 
+#The value of Truck's UID and its chkoutCtr variable is read and then written to the output file. 
 def _printTruckRec(tNode):
     if tNode:
         _printTruckRec(tNode.left)
@@ -55,15 +65,16 @@ def _printTruckRec(tNode):
 
 
 
-#This function reads the data from TruckNode and check chkoutCtr value. Accordingly it will print the statement to the output file as per its status in the system of Binary Tree.
+#This function reads the data from TruckNode and check chkoutCtr value. 
+#Accordingly it will print the statement to the output file as per its status in the system of Binary Tree.
 def _checkTruckRec(tNode, Uid):
     if tNode:
         if tNode.UId == Uid:
-            if (tNode.chkoutCtr % 2 != 0) and (tNode.UId == Uid):
+            if (tNode.chkoutCtr % 2 != 0):
                 outputFile.write("Vehicle id "+ str(Uid) +" entered "+ str(tNode.chkoutCtr) +" times into the system. It is currently fulfilling an open order.\n")
-            elif (tNode.chkoutCtr % 2 == 0) and (tNode.UId == Uid):
+            elif (tNode.chkoutCtr % 2 == 0) and (tNode.chkoutCtr != 0):
                 outputFile.write("Vehicle id "+ str(Uid) +" entered "+ str(tNode.chkoutCtr) +" times into the system. It just completed an order.\n")
-            elif (tNode.chkoutCtr == 0) and (tNode.UId == Uid):
+            elif (tNode.chkoutCtr == 0):
                 outputFile.write("Vehicle id "+ str(Uid) +" just reached the warehouse.\n")
         elif tNode.UId < Uid:
             _checkTruckRec(tNode.right, Uid)
@@ -76,7 +87,8 @@ def _checkTruckRec(tNode, Uid):
 
 
 
-
+#This function search for the vehicles which are avaiable to take next order and put it in a list
+#Prints the UID of all the available trucks to output file
 def _availTrucks(tNode):
     if tNode:
         _availTrucks(tNode.left)
@@ -91,13 +103,12 @@ def _availTrucks(tNode):
 
         
 
-
+#This function outputs the truck UID moving in/out of the warehouse more than frequency given as an argument.
 def _highFreqTrucks(tNode, frequency):
-    flag = False
     if tNode:
         _highFreqTrucks(tNode.left, frequency)
         if (frequency * 2 <= tNode.chkoutCtr):
-            return("Vehicles that moved in/out more than "+ str(frequency) +" times are: \n" + str(tNode.UId) + "," + str(tNode.chkoutCtr) + "\n")
+            TruckNode.highFreqlsit.append(tNode)
         _highFreqTrucks(tNode.right, frequency)
         
 
@@ -105,11 +116,12 @@ def _highFreqTrucks(tNode, frequency):
 
 
 
-
+#This functions lists the vehicle which have already completed the maximum deliveries of the day
+#Output of the functon is written to the outputFile 
 def _maxDeliveries(tNode):
     if tNode:
         _maxDeliveries(tNode.left)
-        if (tNode.chkoutCtr % TruckNode.max_limit == 0) and (tNode.chkoutCtr >= TruckNode.max_limit*2):
+        if (tNode.chkoutCtr >= TruckNode.max_limit*2):
             TruckNode.maxDeliveries.append(tNode.UId)
             #print(TruckNode.maxDeliveries)
         _maxDeliveries(tNode.right)
@@ -118,7 +130,7 @@ def _maxDeliveries(tNode):
 
 
 
-
+#This function search the desired TruckNode and update its chkoutCtr varible
 def _updateTruckRec(tNode, Uid):
     if tNode is None:
         return TruckNode(Uid)
@@ -134,7 +146,7 @@ def _updateTruckRec(tNode, Uid):
 
 
 
-
+#This function prints the number of orders which are Open, Closed and Yet to be fulfilled of the targetorders
 def _printOrderStatus(targetorders):
     #print(targetorders)
     #print("UID list: ",TruckNode.UID)
@@ -145,14 +157,20 @@ def _printOrderStatus(targetorders):
     closed = 2
     for i in TruckNode.count:
         if i % 2 == 0:
-            o[closed] += (i / TruckNode.max_limit)
+            o[closed] += int(i / 2)
         elif i % 2 != 0:
             o[openn] += 1
-    o[yet] = targetorders - o[closed] - o[openn]
+            o[closed] += int(i / 2)
+    value = targetorders - o[closed] - o[openn]
+    if value < 0:
+      o[yet] = 0
+    else:
+      o[yet] = value
     #print(o)
     outputFile.write("Open Orders: "+ str(int(o[openn])) + "\n")
     outputFile.write("Closed Orders: "+ str(int(o[closed])) + "\n")
     outputFile.write("Yet to be fulfilled: "+ str(int(o[yet])) + "\n")
+
 
 
 
@@ -182,6 +200,11 @@ def main():
             #print("P :", P)
             #print(root)
 
+            for i in range(len(P)):
+              P[i] = P[i].strip()
+
+            #print("P :", P)
+
             if (P[0] == "printTruckRec"):
                 outputFile.write("Total number of vehicles entered in the warehouse: " + str(TruckNode.numOfVariable) + "\n")
                 _printTruckRec(root)
@@ -197,11 +220,15 @@ def main():
                     outputFile.write(str(i)+"\n")
 
             elif(P[0] == "highFreqTrucks"):
-                r = _highFreqTrucks(root, int(P[1]))
-                if r is None:
+                TruckNode.highFreqlsit = list()
+                _highFreqTrucks(root, int(P[1]))
+                if len(TruckNode.highFreqlsit) == 0:
                     outputFile.write("No such vehicle present in the system")
                 else:
-                    outputFile.write(r)
+                    outputFile.write("Vehicles that moved in/out more than "+ P[1] +" times are: \n")
+                    for i in TruckNode.highFreqlsit:
+                      outputFile.write(str(i.UId) + "," + str(i.chkoutCtr) + "\n")
+                    
 
             elif (P[0] == "maxDeliveries"):
                 outputFile.write("maxDeliveries: "+ str(TruckNode.max_limit) + "\n")
@@ -239,3 +266,7 @@ def main():
 #setting the __name__ to main function
 if __name__=="__main__":
     main()
+
+
+
+
